@@ -10,16 +10,30 @@ function useIsMobile() {
   return m;
 }
 
-const C = { bg:"#09090f", surface:"#111120", border:"#1e1e2e", orange:"#f97316", green:"#22c55e", red:"#ef4444", blue:"#3b82f6", purple:"#a855f7", yellow:"#eab308", text:"#e2e8f0", muted:"#64748b", dim:"#1a1a28" };
-const TT = { background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, fontSize:12 };
+const C = { bg:"#f0f4f8", surface:"#ffffff", border:"#dde3ee", orange:"#e8194b", green:"#16a34a", red:"#dc2626", blue:"#0a1f5c", purple:"#7c3aed", yellow:"#ca8a04", text:"#0a1f5c", muted:"#6b7a99", dim:"#eef1f8" };
+const LOGO_URL = "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20260%2090%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fbbf24%22%2F%3E%3Cstop%20offset%3D%2233%25%22%20stop-color%3D%22%23ec4899%22%2F%3E%3Cstop%20offset%3D%2266%25%22%20stop-color%3D%22%237c3aed%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2338bdf8%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2268%22%20height%3D%2268%22%20rx%3D%2214%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%2216%22%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%227%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%225%22%2F%3E%3Crect%20x%3D%2227%22%20y%3D%2227%22%20width%3D%2218%22%20height%3D%2218%22%20rx%3D%224%22%20fill%3D%22white%22%2F%3E%3Ctext%20x%3D%2282%22%20y%3D%2250%22%20font-family%3D%22Arial%20Black%2Csans-serif%22%20font-size%3D%2234%22%20font-weight%3D%22900%22%20fill%3D%22%230a1f5c%22%3EPRO%3C%2Ftext%3E%3Ctext%20x%3D%224%22%20y%3D%2284%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2220%22%20font-weight%3D%22700%22%20fill%3D%22%230a1f5c%22%20font-style%3D%22italic%22%3ESigns%20%26amp%3B%20Wraps%3C%2Ftext%3E%3C%2Fsvg%3E";
+const TT = { background:"#ffffff", border:"1px solid #e2e8f0", borderRadius:8, color:"#1e293b", fontSize:12, boxShadow:"0 4px 12px rgba(0,0,0,0.1)" };
 const fmt  = v => (v||0).toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:0,maximumFractionDigits:0});
 const pct  = v => `${(v||0).toFixed(1)}%`;
 const now  = () => new Date().toISOString().split("T")[0];
 const uid  = () => Date.now() + Math.floor(Math.random()*1000);
 
 /* Florida Sales Tax */
-const FL_TAX_COUNTIES = {"Miami-Dade":7,"Broward":7,"Palm Beach":7,"Orange":6.5,"Hillsborough":8.5,"Pinellas":7,"Duval":7,"Other":7};
-const DEFAULT_COUNTY = "Broward";
+const FL_TAX_COUNTIES = {"Miami-Dade":7,"Broward":7,"Palm Beach":7,"Orange":6.5,"Hillsborough":8.5,"Pinellas":7,"Duval":7.5,"Other":7};
+const DEFAULT_COUNTY = "Duval"; // Jacksonville
+
+// Square fees por forma de pagamento
+const SQUARE_FEES = {
+  "Cartao de Credito": { pct: 2.6, flat: 0.10, label: "2.6% + $0.10" },
+  "Cartao de Debito":  { pct: 2.6, flat: 0.10, label: "2.6% + $0.10" },
+  "Square":            { pct: 2.6, flat: 0.10, label: "2.6% + $0.10" },
+  "Digitado/Manual":   { pct: 3.5, flat: 0.15, label: "3.5% + $0.15" },
+};
+const calcSquareFee = (valor, forma) => {
+  const fee = SQUARE_FEES[forma];
+  if (!fee) return 0;
+  return Math.round((valor * fee.pct/100 + fee.flat) * 100) / 100;
+};
 
 /* ================================================================
    SUPABASE CONFIG
@@ -135,8 +149,8 @@ const STATUS_STYLE = {
 
 const SIGN_CATS  = ["ACM Panels","Totem / Pylon","Channel Letters","Vehicle Wrap","Wayfinding","Monument Sign","LED / Digital","Banners & Vinyl","ADA Signs","Other"];
 const EXP_CATS   = ["Material","Labor","Utilities","Salaries","Rent","Marketing","Equipment","Other"];
-const FORMAS     = ["Cheque","ACH / Wire Transfer","Cartão de Crédito","Zelle / Venmo","Cash"];
-const FORMA_ICON = {"Cheque":"🗒️","ACH / Wire Transfer":"🔁","Cartão de Crédito":"💳","Zelle / Venmo":"📱","Cash":"💵","Transferência":"↔️"};
+const FORMAS     = ["Cheque","ACH / Wire Transfer","Cartao de Credito","Cartao de Debito","Square","Zelle / Venmo","Cash"];
+const FORMA_ICON = {"Cheque":"N","ACH / Wire Transfer":"T","Cartao de Credito":"C","Cartao de Debito":"D","Square":"S","Zelle / Venmo":"Z","Cash":"$","Transferencia":"T"};
 
 /* =
    INITIAL DATA
@@ -285,7 +299,7 @@ function Card({children,style={},accent=false}) {
 function Btn({children,onClick,v="primary",size="md",style={},disabled=false}) {
   const sz = size==="sm"?{fontSize:12,padding:"6px 12px"}:{fontSize:13,padding:"9px 16px"};
   const vs = {
-    primary:{background:C.orange,color:"#000"},
+    primary:{background:"linear-gradient(135deg,#e8194b,#0a1f5c)",color:"#fff"},
     ghost:  {background:"rgba(255,255,255,0.07)",color:C.text,border:`1px solid ${C.border}`},
     green:  {background:"rgba(34,197,94,0.15)",color:C.green,border:"1px solid rgba(34,197,94,0.3)"},
     danger: {background:"rgba(239,68,68,0.12)",color:C.red,border:"1px solid rgba(239,68,68,0.25)"},
@@ -294,7 +308,7 @@ function Btn({children,onClick,v="primary",size="md",style={},disabled=false}) {
 }
 
 function Fld({label,value,onChange,type="text",options,span=false,isMobile=false}) {
-  const inp = {background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",color:C.text,fontSize:15,width:"100%",outline:"none",fontFamily:"inherit",WebkitAppearance:"none"};
+  const inp = {background:"#f8fafc",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",color:C.text,fontSize:15,width:"100%",outline:"none",fontFamily:"inherit",WebkitAppearance:"none"};
   return (
     <div style={span&&!isMobile?{gridColumn:"1 / -1"}:{}}>
       {label&&<label style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:5}}>{label}</label>}
@@ -319,7 +333,7 @@ function Tabs({tabs,active,onChange}) {
 }
 
 function StatCard({label,value,color=C.orange,sub}) {
-  return <Card><p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{label}</p><p style={{color,fontSize:20,fontWeight:700,fontFamily:"monospace"}}>{value}</p>{sub&&<p style={{color:C.muted,fontSize:11,marginTop:2}}>{sub}</p>}</Card>;
+  return <Card><p style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{label}</p><p style={{color,fontSize:26,fontWeight:700,fontFamily:"monospace"}}>{value}</p>{sub&&<p style={{color:C.muted,fontSize:11,marginTop:2}}>{sub}</p>}</Card>;
 }
 
 // Modal to collect forma + banco before marking paid/received
@@ -383,8 +397,9 @@ function Dashboard({data,setData}) {
 
   // DRE
   const taxRate       = FL_TAX_COUNTIES[data.taxCounty||DEFAULT_COUNTY] / 100;
-  const totalSalesTax = data.vendas.filter(v=>v.status==="Recebido").reduce((s,v)=>s+(v.salesTax||0),0);
-  const receitaLiq    = recebido - totalSalesTax;
+  const totalSalesTax  = data.vendas.filter(v=>v.status==="Recebido").reduce((s,v)=>s+(v.salesTax||0),0);
+  const totalSquareFees = data.vendas.filter(v=>v.status==="Recebido").reduce((s,v)=>s+(v.squareFee||0),0);
+  const receitaLiq    = recebido - totalSalesTax - totalSquareFees;
   const custoMat      = data.vendas.filter(v=>v.status==="Recebido").reduce((s,v)=>s+(v.custoMaterial||0),0);
   const custoMO       = data.vendas.filter(v=>v.status==="Recebido").reduce((s,v)=>s+(v.custoMaoObra||0),0);
   const custoTotal    = custoMat + custoMO;
@@ -450,10 +465,10 @@ function Dashboard({data,setData}) {
 
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        <Card><p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Vendas do Mes</p><p style={{color:C.orange,fontSize:20,fontWeight:700,fontFamily:"monospace"}}>{fmt(totalVendas)}</p><p style={{color:C.muted,fontSize:11,marginTop:2}}>{fmt(recebido)} recebido</p></Card>
-        <Card><p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Saldo em Bancos</p><p style={{color:saldoBancos>=0?C.green:C.red,fontSize:20,fontWeight:700,fontFamily:"monospace"}}>{fmt(saldoBancos)}</p><p style={{color:C.muted,fontSize:11,marginTop:2}}>{data.bancos.length} conta(s)</p></Card>
-        <Card><p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>A Receber</p><p style={{color:C.blue,fontSize:20,fontWeight:700,fontFamily:"monospace"}}>{fmt(aReceber)}</p>{allAlerts.filter(a=>a.tipo==="Receber").length>0&&<p style={{color:C.red,fontSize:11,marginTop:2}}>{allAlerts.filter(a=>a.tipo==="Receber").length} alerta(s)</p>}</Card>
-        <Card><p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>A Pagar</p><p style={{color:C.red,fontSize:20,fontWeight:700,fontFamily:"monospace"}}>{fmt(aPagar)}</p>{allAlerts.filter(a=>a.tipo==="Pagar").length>0&&<p style={{color:C.red,fontSize:11,marginTop:2}}>{allAlerts.filter(a=>a.tipo==="Pagar").length} alerta(s)</p>}</Card>
+        <Card><p style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Vendas do Mes</p><p style={{color:C.orange,fontSize:26,fontWeight:700,fontFamily:"monospace"}}>{fmt(totalVendas)}</p><p style={{color:C.muted,fontSize:11,marginTop:2}}>{fmt(recebido)} recebido</p></Card>
+        <Card><p style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Saldo em Bancos</p><p style={{color:saldoBancos>=0?C.green:C.red,fontSize:26,fontWeight:700,fontFamily:"monospace"}}>{fmt(saldoBancos)}</p><p style={{color:C.muted,fontSize:11,marginTop:2}}>{data.bancos.length} conta(s)</p></Card>
+        <Card><p style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>A Receber</p><p style={{color:C.blue,fontSize:26,fontWeight:700,fontFamily:"monospace"}}>{fmt(aReceber)}</p>{allAlerts.filter(a=>a.tipo==="Receber").length>0&&<p style={{color:C.red,fontSize:11,marginTop:2}}>{allAlerts.filter(a=>a.tipo==="Receber").length} alerta(s)</p>}</Card>
+        <Card><p style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>A Pagar</p><p style={{color:C.red,fontSize:26,fontWeight:700,fontFamily:"monospace"}}>{fmt(aPagar)}</p>{allAlerts.filter(a=>a.tipo==="Pagar").length>0&&<p style={{color:C.red,fontSize:11,marginTop:2}}>{allAlerts.filter(a=>a.tipo==="Pagar").length} alerta(s)</p>}</Card>
       </div>
 
       {/* DRE */}
@@ -474,8 +489,9 @@ function Dashboard({data,setData}) {
           <div style={{display:"flex",flexDirection:"column",gap:0}}>
             {[
               ["(+) Receita Bruta (vendas recebidas)", recebido,      C.green,  false],
-              ["(-) Sales Tax Coletado (FL)",          -totalSalesTax,C.muted,  true],
-              ["(=) Receita Liquida",                  receitaLiq,    C.green,  false],
+              ["(-) Sales Tax Coletado (FL)",          -totalSalesTax, C.muted,  true],
+              ["(-) Square Fees (processamento)",       -totalSquareFees, "#006aff", true],
+              ["(=) Receita Liquida",                  receitaLiq,     C.green,  false],
               ["(-) Custo de Material",                -custoMat,     C.red,    true],
               ["(-) Custo de Mao de Obra",             -custoMO,      C.red,    true],
               ["(=) Lucro Bruto",                      lucroBruto,    mgColor(margemBruta), false],
@@ -483,7 +499,7 @@ function Dashboard({data,setData}) {
               ["(-) Despesas Variaveis",               -despVar,      C.orange, true],
               ["(=) Resultado Operacional",            lucroOp,       mgColor(margemOp), false],
             ].map(([label,val,color,indent],i) => (
-              <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:`1px solid ${C.dim}`,paddingLeft:indent?12:0}}>
+              <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid #e2e8f0",paddingLeft:indent?12:0}}>
                 <span style={{color:indent?C.muted:C.text,fontSize:13,fontWeight:indent?400:600}}>{label}</span>
                 <span style={{color,fontFamily:"monospace",fontWeight:700,fontSize:13}}>{val<0?fmt(-val):fmt(val)}</span>
               </div>
@@ -510,7 +526,7 @@ function Dashboard({data,setData}) {
                 ["(-) Sales Tax FL", -totalSalesTax],
                 ["Receita Liquida", receitaLiq],
               ].map(([l,v],i)=>(
-                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${C.dim}`}}>
+                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #e2e8f0"}}>
                   <span style={{color:C.muted,fontSize:12}}>{l}</span>
                   <span style={{color:v>=0?C.green:C.red,fontFamily:"monospace",fontWeight:600,fontSize:12}}>{v<0?"-"+fmt(-v):fmt(v)}</span>
                 </div>
@@ -523,7 +539,7 @@ function Dashboard({data,setData}) {
                 ["Mao de Obra", custoMO],
                 ["Total CPV", custoTotal],
               ].map(([l,v],i)=>(
-                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${C.dim}`}}>
+                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #e2e8f0"}}>
                   <span style={{color:C.muted,fontSize:12}}>{l}</span>
                   <span style={{color:C.red,fontFamily:"monospace",fontWeight:600,fontSize:12}}>{fmt(v)}</span>
                 </div>
@@ -532,7 +548,7 @@ function Dashboard({data,setData}) {
             <div style={{background:"rgba(249,115,22,0.06)",borderRadius:10,padding:12,border:"1px solid rgba(249,115,22,0.2)"}}>
               <p style={{color:C.orange,fontWeight:700,fontSize:13,marginBottom:8}}>Despesas Operacionais</p>
               {data.despesas.map(d=>(
-                <div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${C.dim}`}}>
+                <div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #e2e8f0"}}>
                   <span style={{color:C.muted,fontSize:12}}>{d.descricao} <span style={{fontSize:10,color:`${C.muted}88`}}>({d.tipo})</span></span>
                   <span style={{color:C.orange,fontFamily:"monospace",fontWeight:600,fontSize:12}}>{fmt(d.valor)}</span>
                 </div>
@@ -550,7 +566,7 @@ function Dashboard({data,setData}) {
       <Card>
         <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:10}}>
           <div>
-            <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Ponto de Equilibrio</p>
+            <p style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Ponto de Equilibrio</p>
             <p style={{color:C.orange,fontSize:22,fontWeight:700,fontFamily:"monospace"}}>{fmt(breakEven)}</p>
             <p style={{color:C.muted,fontSize:12,marginTop:2}}>Fixos: {fmt(fixos)} · Margem: {pct(100-data.margemVariavel)}</p>
           </div>
@@ -561,8 +577,8 @@ function Dashboard({data,setData}) {
             }
           </div>
         </div>
-        <div style={{background:"#1e2030",borderRadius:99,height:10,overflow:"hidden"}}>
-          <div style={{width:`${progresso}%`,height:"100%",background:progresso>=100?C.green:`linear-gradient(90deg,${C.orange},#facc15)`,borderRadius:99,transition:"width 0.5s"}}/>
+        <div style={{background:"#e2e8f0",borderRadius:99,height:10,overflow:"hidden"}}>
+          <div style={{width:`${progresso}%`,height:"100%",background:progresso>=100?C.green:"linear-gradient(90deg,#e8194b,#7b2ff7,#0a1f5c)",borderRadius:99,transition:"width 0.5s"}}/>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
           <span style={{color:C.muted,fontSize:11}}>Recebido: {fmt(recebido)} ({pct(progresso)})</span>
@@ -577,7 +593,7 @@ function Dashboard({data,setData}) {
           {data.bancos.map(b=>{
             const saldo=calcSaldoBanco(b);
             return(
-              <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.dim,borderRadius:10,padding:"10px 14px"}}>
+              <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#f1f5f9",borderRadius:10,padding:"10px 14px"}}>
                 <div style={{display:"flex",gap:10,alignItems:"center"}}>
                   <span style={{fontSize:18}}>B</span>
                   <div><p style={{color:C.text,fontWeight:600,fontSize:14}}>{b.nome}</p><p style={{color:C.muted,fontSize:11}}>{b.banco}</p></div>
@@ -594,7 +610,7 @@ function Dashboard({data,setData}) {
         <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Fluxo Diario — Abril</p>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={diario} margin={{top:0,right:0,left:isMobile?-28:-10,bottom:0}}>
-            <CartesianGrid strokeDasharray="3 3" stroke={C.dim}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
             <XAxis dataKey="dia" tick={{fill:C.muted,fontSize:11}}/>
             <YAxis tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} tick={{fill:C.muted,fontSize:10}}/>
             <Tooltip contentStyle={TT} formatter={v=>fmt(v)}/>
@@ -610,7 +626,7 @@ function Dashboard({data,setData}) {
         <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Vendas por Categoria</p>
         <ResponsiveContainer width="100%" height={130}>
           <BarChart data={porCat} layout="vertical" margin={{top:0,right:8,left:0,bottom:0}}>
-            <CartesianGrid strokeDasharray="3 3" stroke={C.dim}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
             <XAxis type="number" tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} tick={{fill:C.muted,fontSize:10}}/>
             <YAxis dataKey="cat" type="category" tick={{fill:C.muted,fontSize:11}} width={60}/>
             <Tooltip contentStyle={TT} formatter={v=>fmt(v)}/>
@@ -626,7 +642,7 @@ function Dashboard({data,setData}) {
           {data.vendedores.map(v=>{
             const base=data.vendas.filter(s=>s.vendedorId===v.id&&s.status==="Recebido").reduce((s,x)=>s+x.valor,0);
             return(
-              <div key={v.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.dim,borderRadius:10,padding:"10px 14px"}}>
+              <div key={v.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#f1f5f9",borderRadius:10,padding:"10px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(249,115,22,0.2)",color:C.orange,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14,flexShrink:0}}>{v.nome[0]}</div>
                   <div><p style={{color:C.text,fontWeight:600,fontSize:14}}>{v.nome.split(" ")[0]}</p><p style={{color:C.muted,fontSize:11}}>{v.comissao||0}% · base {fmt(base)}</p></div>
@@ -646,7 +662,7 @@ function Vendas({data,setData}) {
   const [show,    setShow]    = useState(false);
   const [editId,  setEditId]  = useState(null);  // venda being edited
   const [modal,   setModal]   = useState(null);  // vendaId for payment modal
-  const emptyForm = {data:"",clienteId:"",vendedorId:"",categoria:"",descricao:"",valor:"",status:"Pendente",comissaoCustom:"",custoMaterial:"",custoMaoObra:"",taxavel:true};
+  const emptyForm = {data:"",clienteId:"",vendedorId:"",categoria:"",descricao:"",valor:"",status:"Pendente",comissaoCustom:"",custoMaterial:"",custoMaoObra:"",taxavel:true,baseComissao:"bruto",squareFee:0};
   const [form,    setForm]    = useState(emptyForm);
   const ff = k => v => setForm(f => ({...f,[k]:v}));
 
@@ -655,8 +671,16 @@ function Vendas({data,setData}) {
     if (f.comissaoCustom !== "" && f.comissaoCustom !== undefined && f.comissaoCustom !== null) return +f.comissaoCustom;
     return 0;
   };
+  const getBaseComissao = (f) => {
+    const val = +f.valor||0;
+    const tax = f.taxavel ? val*(FL_TAX_COUNTIES[data.taxCounty||DEFAULT_COUNTY]/100) : 0;
+    const cm  = +f.custoMaterial||0;
+    const co  = +f.custoMaoObra||0;
+    if (f.baseComissao==="liquido") return Math.max(val - cm - co - tax, 0);
+    return val; // bruto (default)
+  };
   const comissaoPreview = form.valor && getComissao(form) > 0
-    ? +form.valor * getComissao(form) / 100 : 0;
+    ? getBaseComissao(form) * getComissao(form) / 100 : 0;
 
   const save = () => {
     if (!form.data || !form.clienteId || !form.valor) return;
@@ -727,10 +751,10 @@ function Vendas({data,setData}) {
 
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Total Mês</p><p style={{color:C.orange,fontSize:15,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(total)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Recebido</p><p style={{color:C.green,fontSize:15,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(recebido)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Pendente</p><p style={{color:C.orange,fontSize:15,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(total-recebido)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Comissões</p><p style={{color:C.purple,fontSize:15,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalCom)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Total Mês</p><p style={{color:C.orange,fontSize:19,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(total)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Recebido</p><p style={{color:C.green,fontSize:19,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(recebido)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Pendente</p><p style={{color:C.orange,fontSize:19,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(total-recebido)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Comissões</p><p style={{color:C.purple,fontSize:19,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalCom)}</p></Card>
       </div>
 
       {/* FORM — create or edit */}
@@ -777,6 +801,29 @@ function Vendas({data,setData}) {
             </div>
           </div>
 
+          {/* SQUARE FEE */}
+          {SQUARE_FEES[form.forma] && form.valor && +form.valor > 0 && (() => {
+            const fee = calcSquareFee(+form.valor, form.forma);
+            const feeInfo = SQUARE_FEES[form.forma];
+            return (
+              <div style={{background:"rgba(0,0,0,0.04)",border:"1px solid #e2e8f0",borderRadius:12,padding:12,marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                    <div style={{width:32,height:32,background:"#006aff",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:800,fontSize:14}}>S</div>
+                    <div>
+                      <p style={{color:C.text,fontWeight:600,fontSize:13}}>Square Processing Fee</p>
+                      <p style={{color:C.muted,fontSize:12}}>{feeInfo.label} · {form.forma}</p>
+                    </div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <p style={{color:"#dc2626",fontFamily:"monospace",fontWeight:700,fontSize:18}}>{fmt(fee)}</p>
+                    <p style={{color:C.muted,fontSize:11}}>deduzido do recebimento</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* MARGEM PREVIEW */}
           {(form.valor && (+form.custoMaterial > 0 || +form.custoMaoObra > 0)) && (() => {
             const val = +form.valor, cm = +form.custoMaterial||0, co = +form.custoMaoObra||0;
@@ -799,40 +846,63 @@ function Vendas({data,setData}) {
 
           {/* COMISSAO SECTION */}
           <div style={{background:"rgba(168,85,247,0.06)",border:"1px solid rgba(168,85,247,0.2)",borderRadius:12,padding:12,marginBottom:12}}>
-            <p style={{color:C.purple,fontSize:12,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>💜 Comissão</p>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10,alignItems:"end"}}>
-
-
+            <p style={{color:C.purple,fontSize:12,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Comissao do Vendedor</p>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10,marginBottom:10}}>
               <div>
-                <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Comissão (%)</p>
+                <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Comissao (%)</p>
                 <div style={{position:"relative"}}>
-                  <input
-                    type="number" step="0.1" min="0" max="100"
+                  <input type="number" step="0.1" min="0" max="100"
                     value={form.comissaoCustom}
                     onChange={e=>ff("comissaoCustom")(e.target.value)}
                     placeholder="Ex: 7.5"
-                    style={{background:C.bg,border:`1px solid ${form.comissaoCustom?"rgba(168,85,247,0.6)":C.border}`,borderRadius:8,padding:"10px 32px 10px 12px",color:C.text,fontSize:15,width:"100%",outline:"none",fontFamily:"inherit"}}
+                    style={{background:"#f8fafc",border:"1px solid "+(form.comissaoCustom?"rgba(168,85,247,0.6)":C.border),borderRadius:8,padding:"10px 32px 10px 12px",color:C.text,fontSize:15,width:"100%",outline:"none",fontFamily:"inherit"}}
                   />
                   <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:13}}>%</span>
                 </div>
-
               </div>
-              {/* Preview */}
               <div style={{background:"rgba(168,85,247,0.1)",borderRadius:10,padding:"10px 14px",border:"1px solid rgba(168,85,247,0.25)"}}>
-                <p style={{color:C.muted,fontSize:11,textTransform:"uppercase"}}>Comissão calculada</p>
+                <p style={{color:C.muted,fontSize:11,textTransform:"uppercase"}}>Comissao calculada</p>
                 <p style={{color:C.purple,fontFamily:"monospace",fontWeight:700,fontSize:20,marginTop:4}}>
                   {form.valor && +form.valor > 0 ? fmt(comissaoPreview) : "—"}
                 </p>
-                {form.valor && +form.valor > 0 && (
+                {form.valor && +form.valor > 0 && getComissao(form) > 0 && (
                   <p style={{color:C.muted,fontSize:11,marginTop:2}}>
-                    {pct(getComissao(form))} de {fmt(+form.valor)}
+                    {pct(getComissao(form))} de {fmt(getBaseComissao(form))}
                   </p>
                 )}
               </div>
             </div>
+            <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Base de calculo:</p>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {[
+                {v:"bruto",   l:"Valor bruto da venda (total sem deducoes)"},
+                {v:"liquido", l:"Valor liquido (valor - material - mao de obra - tax)"},
+              ].map(opt => (
+                <div key={opt.v} onClick={()=>ff("baseComissao")(opt.v)}
+                  style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",
+                    background:form.baseComissao===opt.v?"rgba(168,85,247,0.1)":"#f8fafc",
+                    borderRadius:8,padding:"10px 14px",
+                    border:"1px solid "+(form.baseComissao===opt.v?"rgba(168,85,247,0.4)":C.border)}}>
+                  <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(form.baseComissao===opt.v?C.purple:C.muted),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {form.baseComissao===opt.v&&<div style={{width:8,height:8,borderRadius:"50%",background:C.purple}}/>}
+                  </div>
+                  <div>
+                    <p style={{color:C.text,fontSize:13,fontWeight:form.baseComissao===opt.v?600:400}}>{opt.l}</p>
+                    {form.valor && +form.valor > 0 && (() => {
+                      const val = +form.valor;
+                      const tax = form.taxavel?val*(FL_TAX_COUNTIES[data.taxCounty||DEFAULT_COUNTY]/100):0;
+                      const base = opt.v==="liquido"
+                        ? Math.max(val-(+form.custoMaterial||0)-(+form.custoMaoObra||0)-tax,0)
+                        : val;
+                      return <p style={{color:C.muted,fontSize:11,marginTop:1}}>Base: {fmt(base)} → comissao: {fmt(base*getComissao(form)/100)}</p>;
+                    })()}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{display:"flex",gap:8}}>
+                    <div style={{display:"flex",gap:8}}>
             <Btn onClick={save}>{editId ? "Salvar Alterações" : "Salvar Venda"}</Btn>
             <Btn v="ghost" onClick={cancelEdit}>Cancelar</Btn>
           </div>
@@ -903,9 +973,15 @@ function Vendas({data,setData}) {
                       <p style={{color:C.green,fontFamily:"monospace",fontWeight:700,fontSize:14}}>{fmt(lucro)}</p>
                     </div>
                     {v.taxavel && v.salesTax > 0 && (
-                      <div style={{flex:1,background:"rgba(59,130,246,0.1)",borderRadius:8,padding:"6px 10px",border:"1px solid rgba(59,130,246,0.25)"}}>
+                      <div style={{flex:1,background:"rgba(37,99,235,0.08)",borderRadius:8,padding:"6px 10px",border:"1px solid rgba(37,99,235,0.2)"}}>
                         <p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Sales Tax</p>
                         <p style={{color:C.blue,fontFamily:"monospace",fontWeight:700,fontSize:14}}>{fmt(v.salesTax)}</p>
+                      </div>
+                    )}
+                    {v.squareFee > 0 && (
+                      <div style={{flex:1,background:"rgba(0,106,255,0.08)",borderRadius:8,padding:"6px 10px",border:"1px solid rgba(0,106,255,0.2)"}}>
+                        <p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Square Fee</p>
+                        <p style={{color:"#006aff",fontFamily:"monospace",fontWeight:700,fontSize:14}}>{fmt(v.squareFee)}</p>
                       </div>
                     )}
                   </div>
@@ -924,6 +1000,139 @@ function Vendas({data,setData}) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+
+/* =
+   FLUXO DE CAIXA
+= *
+      {vendaTab==="vendas" && (
+        <div style={{display:"flex",flexDirection:"column",gap:0}}>
+
+        </div>
+      )}
+
+      {vendaTab==="comissoes" && (() => {
+        const comissoesPagas = data.comissoesPagas||[];
+        const totalFixos = data.despesas.filter(d=>d.tipo==="Fixo").reduce((s,d)=>s+d.valor,0);
+        const be0 = Math.max((100-data.margemVariavel)/100,0.01);
+        const breakEven = totalFixos/be0;
+        return (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {data.vendedores.length===0&&<Card style={{textAlign:"center",padding:32}}><p style={{color:C.muted}}>Nenhum vendedor cadastrado.</p></Card>}
+            {data.vendedores.map(v=>{
+              const vendasV   = data.vendas.filter(s=>s.vendedorId===v.id&&s.status==="Recebido");
+              const base      = vendasV.reduce((s,x)=>s+x.valor,0);
+              const comTotal  = base*(v.comissao||0)/100;
+              const jaPago    = comissoesPagas.filter(c=>c.vendedorId===v.id).reduce((s,c)=>s+c.valor,0);
+              const saldo     = comTotal-jaPago;
+              const lucroLiq  = vendasV.reduce((s,x)=>{
+                const rateioCF=breakEven>0?totalFixos*(x.valor/breakEven):0;
+                return s+(x.valor-(x.custoMaterial||0)-(x.custoMaoObra||0)-rateioCF-(x.salesTax||0));
+              },0);
+              const mgLiq    = base>0?(lucroLiq/base*100):0;
+              const mlColor  = mgLiq>=20?C.green:mgLiq>=10?C.yellow:C.red;
+              return(
+                <Card key={v.id}>
+                  }
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+                    <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(124,58,237,0.15)",color:C.purple,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:18,flexShrink:0}}>{v.nome[0]}</div>
+                    <div style={{flex:1}}>
+                      <p style={{color:C.text,fontWeight:700,fontSize:15}}>{v.nome}</p>
+                      <p style={{color:C.muted,fontSize:12}}>{v.comissao||0}% comissao · {v.email||"sem email"}</p>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Vendas</p>
+                      <p style={{color:C.text,fontWeight:700,fontSize:15}}>{vendasV.length}</p>
+                    </div>
+                  </div>
+
+                  }
+                  {base>0&&(
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+                      <div style={{background:mlColor+"15",borderRadius:10,padding:"10px 12px",border:"1px solid "+mlColor+"30",textAlign:"center"}}>
+                        <p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Margem Liq.</p>
+                        <p style={{color:mlColor,fontFamily:"monospace",fontWeight:700,fontSize:18,marginTop:2}}>{pct(mgLiq)}</p>
+                        <p style={{color:C.muted,fontSize:10,marginTop:2}}>{fmt(lucroLiq)}</p>
+                      </div>
+                      <div style={{background:"rgba(22,163,74,0.08)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(22,163,74,0.2)",textAlign:"center"}}>
+                        <p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Faturado</p>
+                        <p style={{color:C.green,fontFamily:"monospace",fontWeight:700,fontSize:18,marginTop:2}}>{fmt(base)}</p>
+                        <p style={{color:C.muted,fontSize:10,marginTop:2}}>{vendasV.length} venda(s)</p>
+                      </div>
+                      <div style={{background:"rgba(124,58,237,0.08)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(124,58,237,0.2)",textAlign:"center"}}>
+                        <p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Comissao</p>
+                        <p style={{color:C.purple,fontFamily:"monospace",fontWeight:700,fontSize:18,marginTop:2}}>{fmt(comTotal)}</p>
+                        <p style={{color:C.muted,fontSize:10,marginTop:2}}>{fmt(jaPago)} pago</p>
+                      </div>
+                    </div>
+                  )}
+
+                  }
+                  {saldo>0&&(
+                    <div style={{background:"rgba(232,25,75,0.06)",borderRadius:10,padding:"12px 14px",border:"1px solid rgba(232,25,75,0.2)",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div>
+                          <p style={{color:C.muted,fontSize:11,textTransform:"uppercase"}}>Saldo a Pagar</p>
+                          <p style={{color:C.orange,fontFamily:"monospace",fontWeight:700,fontSize:22}}>{fmt(saldo)}</p>
+                        </div>
+                        <Btn onClick={()=>setPayingCom(payingCom===v.id?null:v.id);setPayForma("");setPayBanco("")}>{payingCom===v.id?"Cancelar":"$ Pagar"}</Btn>
+                      </div>
+                      {payingCom===v.id&&(
+                        <div style={{marginTop:10,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                          <Fld label="Forma" value={payForma} onChange={setPayForma} options={FORMAS} isMobile={isMobile}/>
+                          <Fld label="Banco" value={payBanco} onChange={setPayBanco} options={data.bancos.map(b=>({v:b.id,l:b.nome}))} isMobile={isMobile}/>
+                          <div style={{gridColumn:"1 / -1"}}>
+                            <Btn onClick={()=>{
+                              if(!payForma||!payBanco) return;
+                              const tx={id:uid(),vendedorId:v.id,valor:saldo,data:now(),bancoId:+payBanco,forma:payForma,obs:""};
+                              const bancoTx={id:uid(),data:now(),descricao:"Comissao "+v.nome,tipo:"saida",valor:saldo,forma:payForma};
+                              const caixaTx={id:uid(),data:now(),descricao:"Comissao "+v.nome,tipo:"saida",valor:saldo,categoria:"Salarios",forma:payForma,bancoId:+payBanco};
+                              setData(d=>({...d,
+                                comissoesPagas:[...(d.comissoesPagas||[]),tx],
+                                bancos:debitarBanco(d.bancos,+payBanco,bancoTx),
+                                caixa:[...d.caixa,caixaTx],
+                              }));
+                              setPaying(false);setPayForma("");setPayBanco("");
+                            }}>Confirmar Pagamento de {fmt(saldo)}</Btn>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {saldo<=0&&base>0&&<p style={{color:C.green,fontSize:13,fontWeight:600}}>Comissao em dia</p>}
+                  {base===0&&<p style={{color:C.muted,fontSize:13}}>Nenhuma venda recebida este mes.</p>}
+
+                  }
+                  {vendasV.length>0&&(
+                    <div style={{borderTop:"1px solid "+C.border,paddingTop:10,marginTop:4}}>
+                      <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",marginBottom:6}}>Vendas que geram comissao</p>
+                      {vendasV.map(x=>{
+                        const com=x.valor*(v.comissao||0)/100;
+                        const cli=data.clientes.find(c=>c.id===x.clienteId)?.nome||"Cliente";
+                        return(
+                          <div key={x.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 8px",borderRadius:8,marginBottom:4,background:C.dim}}>
+                            <div>
+                              <p style={{color:C.text,fontSize:13,fontWeight:500}}>{x.descricao||x.categoria}</p>
+                              <p style={{color:C.muted,fontSize:11}}>{cli} · {x.data}</p>
+                            </div>
+                            <div style={{textAlign:"right"}}>
+                              <p style={{color:C.green,fontFamily:"monospace",fontWeight:600,fontSize:13}}>{fmt(com)}</p>
+                              <p style={{color:C.muted,fontSize:10}}>{v.comissao||0}% de {fmt(x.valor)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -974,9 +1183,9 @@ function FluxoCaixa({data,setData}) {
       <SectionHead title="Fluxo de Caixa" action={<Btn onClick={()=>setShow(!show)}>+ Lançamento</Btn>}/>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Entradas</p><p style={{color:C.green,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalE)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Saídas</p><p style={{color:C.red,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalS)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Saldo</p><p style={{color:(totalE-totalS)>=0?C.green:C.red,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalE-totalS)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Entradas</p><p style={{color:C.green,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalE)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Saídas</p><p style={{color:C.red,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalS)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Saldo</p><p style={{color:(totalE-totalS)>=0?C.green:C.red,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalE-totalS)}</p></Card>
       </div>
 
       <Tabs tabs={[["lancamentos","= Lançamentos"],["diario","~ Diário"],["grafico","^ Gráfico"]]} active={tab} onChange={setTab}/>
@@ -1036,7 +1245,7 @@ function FluxoCaixa({data,setData}) {
             {diario.length===0&&<p style={{color:C.muted,fontSize:14,textAlign:"center",padding:24}}>Nenhum lançamento neste mês.</p>}
             {diario.map(d=>(
               <div key={d.data}>
-                <div style={{background:C.dim,padding:"10px 14px",display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
+                <div style={{background:"#f1f5f9",padding:"10px 14px",display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
                   <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
                     <span style={{color:C.text,fontWeight:700,fontSize:13}}>{d.data}</span>
                     <span style={{color:C.green,fontSize:12,fontFamily:"monospace"}}>+{fmt(d.entrada)}</span>
@@ -1049,7 +1258,7 @@ function FluxoCaixa({data,setData}) {
                 {d.itens.map(item=>{
                   const banco=data.bancos.find(b=>b.id===item.bancoId);
                   return(
-                    <div key={item.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 20px",borderBottom:`1px solid ${C.dim}`,alignItems:"center"}}>
+                    <div key={item.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 20px",borderBottom:"1px solid #e2e8f0",alignItems:"center"}}>
                       <div style={{display:"flex",gap:8,flex:1,minWidth:0,alignItems:"center"}}>
                         <span style={{color:item.tipo==="entrada"?C.green:C.red,fontSize:14}}>{item.tipo==="entrada"?"▲":"▼"}</span>
                         <div style={{flex:1,minWidth:0}}>
@@ -1073,7 +1282,7 @@ function FluxoCaixa({data,setData}) {
             <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Entradas e Saídas por Dia</p>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={diario} margin={{top:0,right:0,left:isMobile?-28:-10,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.dim}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
                 <XAxis dataKey="data" tick={{fill:C.muted,fontSize:10}}/>
                 <YAxis tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} tick={{fill:C.muted,fontSize:10}}/>
                 <Tooltip contentStyle={TT} formatter={v=>fmt(v)}/>
@@ -1087,7 +1296,7 @@ function FluxoCaixa({data,setData}) {
             <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Saldo Acumulado</p>
             <ResponsiveContainer width="100%" height={150}>
               <AreaChart data={diario.map(d=>({...d,saldo:d.saldoDia}))} margin={{top:0,right:0,left:isMobile?-28:-10,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.dim}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
                 <XAxis dataKey="data" tick={{fill:C.muted,fontSize:10}}/>
                 <YAxis tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} tick={{fill:C.muted,fontSize:10}}/>
                 <Tooltip contentStyle={TT} formatter={v=>fmt(v)}/>
@@ -1239,7 +1448,7 @@ function Comissoes({data,setData}) {
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       <SectionHead title="Comissões de Vendedores"/>
 
-      {/* Modal pagar comissão */}
+      }
       {modal && (() => {
         const v = data.vendedores.find(x => x.id === modal.vendedorId);
         return (
@@ -1262,14 +1471,14 @@ function Comissoes({data,setData}) {
         );
       })()}
 
-      {/* Totais */}
+      }
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Total a Pagar</p><p style={{color:C.orange,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalGeral)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Já Pago</p><p style={{color:C.green,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalPago)}</p></Card>
-        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Pendente</p><p style={{color:totalPendente>0?C.red:C.green,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalPendente)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Total a Pagar</p><p style={{color:C.orange,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalGeral)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Já Pago</p><p style={{color:C.green,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalPago)}</p></Card>
+        <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Pendente</p><p style={{color:totalPendente>0?C.red:C.green,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalPendente)}</p></Card>
       </div>
 
-      {/* Por vendedor */}
+      }
       {data.vendedores.map(v => {
         const todasVendas   = data.vendas.filter(s => s.vendedorId === v.id);
         const vendasReceb   = todasVendas.filter(s => s.status === "Recebido");
@@ -1282,7 +1491,7 @@ function Comissoes({data,setData}) {
 
         return (
           <Card key={v.id} style={{borderColor:`${C.orange}30`}}>
-            {/* Header */}
+            }
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
               <div style={{width:44,height:44,borderRadius:"50%",background:"rgba(249,115,22,0.2)",color:C.orange,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:18,flexShrink:0}}>{v.nome[0]}</div>
               <div style={{flex:1}}>
@@ -1291,7 +1500,7 @@ function Comissoes({data,setData}) {
               </div>
             </div>
 
-            {/* Stats */}
+            }
             <div style={{display:"flex",flexDirection:"column",gap:0,marginBottom:12}}>
               {[
                 ["Pedidos totais",    todasVendas.length,                         C.text],
@@ -1300,14 +1509,14 @@ function Comissoes({data,setData}) {
                 ["Comissão gerada",   fmt(comTotal),                               C.orange],
                 ["Já pago",           fmt(jaPago),                                 C.green],
               ].map(([l,val,color]) => (
-                <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.dim}`}}>
+                <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e2e8f0"}}>
                   <span style={{color:C.muted,fontSize:13}}>{l}</span>
                   <span style={{color,fontSize:13,fontWeight:600}}>{val}</span>
                 </div>
               ))}
             </div>
 
-            {/* Saldo + botão pagar */}
+            }
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:saldoCom>0?"rgba(249,115,22,0.08)":"rgba(34,197,94,0.08)",borderRadius:10,padding:"12px 14px",marginBottom:12,border:`1px solid ${saldoCom>0?"rgba(249,115,22,0.2)":"rgba(34,197,94,0.2)"}`}}>
               <div>
                 <p style={{color:C.muted,fontSize:11,textTransform:"uppercase"}}>Saldo a Pagar</p>
@@ -1321,7 +1530,7 @@ function Comissoes({data,setData}) {
               {saldoCom <= 0 && <span style={{color:C.green,fontWeight:700,fontSize:13}}>✓ Em dia</span>}
             </div>
 
-            {/* Vendas recebidas detalhadas */}
+            }
             {vendasReceb.length > 0 && (
               <div style={{marginBottom:10}}>
                 <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Vendas que geram comissão</p>
@@ -1330,7 +1539,7 @@ function Comissoes({data,setData}) {
                     const cli   = data.clientes.find(c => c.id === s.clienteId);
                     const banco = data.bancos.find(b => b.id === s.bancoId);
                     return (
-                      <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:C.dim,borderRadius:8}}>
+                      <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:"#f1f5f9",borderRadius:8}}>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{color:C.text,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.descricao}</p>
                           <p style={{color:`${C.muted}99`,fontSize:11}}>
@@ -1350,7 +1559,7 @@ function Comissoes({data,setData}) {
               </div>
             )}
 
-            {/* Histórico de pagamentos */}
+            }
             {histVendedor.length > 0 && (
               <div>
                 <button onClick={()=>setShowHist(isOpen?null:v.id)}
@@ -1536,14 +1745,14 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
         active={tab} onChange={t=>{setTab(t);setShowC(false);setShowV(false);setShowD(false);setShowR(false);setShowB(false);}}
       />
 
-      {/* -- RECEITAS -- */}
+      }
       {tab==="receitas" && (
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {/* Totais */}
+          }
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Total Receitas</p><p style={{color:C.green,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalRec)}</p></Card>
-            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Via Indicação</p><p style={{color:C.blue,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(receitas.filter(r=>r.conheceu==="Indicacao").reduce((s,r)=>s+r.valor,0))}</p></Card>
-            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Qtd. Fontes</p><p style={{color:C.orange,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{receitas.length}</p></Card>
+            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Total Receitas</p><p style={{color:C.green,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalRec)}</p></Card>
+            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Via Indicação</p><p style={{color:C.blue,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(receitas.filter(r=>r.conheceu==="Indicacao").reduce((s,r)=>s+r.valor,0))}</p></Card>
+            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Qtd. Fontes</p><p style={{color:C.orange,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{receitas.length}</p></Card>
           </div>
 
           <Btn onClick={()=>{setFR(emptyR);setEditR(null);setShowR(true);}} style={{alignSelf:"flex-start"}}>+ Nova Receita</Btn>
@@ -1571,7 +1780,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
             </Card>
           )}
 
-          {/* Agrupar por tipo */}
+          }
           {COMO_CONHECEU.map(origem => {
             const items = receitas.filter(r => r.conheceu === origem);
             if (items.length === 0) return null;
@@ -1610,13 +1819,13 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
         </div>
       )}
 
-      {/* -- DESPESAS -- */}
+      }
       {tab==="despesas" && (
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Fixo/mês</p><p style={{color:C.red,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalFixo)}</p></Card>
-            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Variável/mês</p><p style={{color:C.orange,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalVar)}</p></Card>
-            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Break-even</p><p style={{color:C.purple,fontSize:16,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(be)}</p></Card>
+            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Fixo/mês</p><p style={{color:C.red,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalFixo)}</p></Card>
+            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Variável/mês</p><p style={{color:C.orange,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(totalVar)}</p></Card>
+            <Card style={{padding:10}}><p style={{color:C.muted,fontSize:10,textTransform:"uppercase"}}>Break-even</p><p style={{color:C.purple,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:2}}>{fmt(be)}</p></Card>
           </div>
 
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
@@ -1624,7 +1833,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <span style={{color:C.muted,fontSize:13}}>Custo variável sobre vendas:</span>
               <input type="number" value={data.margemVariavel} onChange={e=>setData(d=>({...d,margemVariavel:+e.target.value}))}
-                style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 10px",color:C.text,fontSize:14,width:56,outline:"none",fontFamily:"inherit"}}/>
+                style={{background:"#f8fafc",border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 10px",color:C.text,fontSize:14,width:56,outline:"none",fontFamily:"inherit"}}/>
               <span style={{color:C.muted,fontSize:13}}>%</span>
             </div>
           </div>
@@ -1679,7 +1888,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
         </div>
       )}
 
-      {/* -- BANCOS -- */}
+      }
       {tab==="bancos" && (
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Card style={{background:"rgba(249,115,22,0.06)",borderColor:"rgba(249,115,22,0.25)"}}>
@@ -1756,7 +1965,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
                       <p style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Últimas Transações</p>
                       <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:180,overflowY:"auto"}}>
                         {[...txs].reverse().slice(0,8).map(t=>(
-                          <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:C.dim,borderRadius:8}}>
+                          <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:"#f1f5f9",borderRadius:8}}>
                             <div style={{display:"flex",gap:8,alignItems:"center",flex:1,minWidth:0}}>
                               <span style={{fontSize:14}}>{FORMA_ICON[t.forma]||"💳"}</span>
                               <div style={{flex:1,minWidth:0}}>
@@ -1780,7 +1989,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
         </div>
       )}
 
-      {/* -- CLIENTES -- */}
+      }
       {tab==="clientes"&&(
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Btn onClick={()=>{setFC(emptyC);setEditC(null);setShowC(true);}} style={{alignSelf:"flex-start"}}>+ Novo Cliente</Btn>
@@ -1819,7 +2028,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
         </div>
       )}
 
-      {/* -- VENDEDORES -- */}
+      }
       {tab==="vendedores"&&(
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <Btn onClick={()=>{setFV(emptyV);setEditV(null);setShowV(true);}} style={{alignSelf:"flex-start"}}>+ Novo Vendedor</Btn>
@@ -1858,7 +2067,7 @@ const PERFIL_CLIENTE = ["Cliente Final","Contractor","Revenda"];
         </div>
       )}
 
-      {/* -- FORMAS DE PAGAMENTO -- */}
+      }
       {tab==="formas"&&(
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <p style={{color:C.muted,fontSize:13,lineHeight:1.5}}>Formas de pagamento aceitas pela Pro Signs. Ao marcar uma venda ou conta como recebida, você escolhe a forma e o banco onde o valor foi depositado.</p>
@@ -1905,7 +2114,6 @@ const NAV=[
   {id:"vendas",    label:"Vendas",     icon:"◈"},
   {id:"caixa",     label:"Caixa",      icon:"◉"},
   {id:"contas",    label:"Contas",     icon:"◑"},
-  {id:"comissoes", label:"Comissões",  icon:"◐"},
   {id:"cadastros", label:"Cadastros",  icon:"◎"},
 ];
 
@@ -1915,12 +2123,94 @@ export default function App() {
   const [loading,setLoading] = useState(false);
   const [synced, setSynced]  = useState(false);
   const [syncErr,setSyncErr] = useState("");
+  const [user,   setUser]    = useState(null);   // auth user
+  const [perfil, setPerfil]  = useState(null);   // 'admin'|'vendedor'|'producao'
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginForm, setLoginForm] = useState({email:"", password:"", error:"", loading:false});
   const isMobile = useIsMobile();
+
+  // ── Check auth session on mount ───────────────────────────────
+  useEffect(() => {
+    if (!IS_CONNECTED) { setAuthLoading(false); return; }
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${getStoredToken()}` }
+      });
+      if (res.ok) {
+        const u = await res.json();
+        if (u?.id) {
+          setUser(u);
+          await loadPerfil(u.id, getStoredToken());
+          await loadAll();
+        }
+      }
+    } catch(e) { console.error("Session check failed:", e); }
+    setAuthLoading(false);
+  };
+
+  const getStoredToken = () => {
+    try {
+      const key = Object.keys(localStorage).find(k => k.includes('auth-token') || k.includes('supabase'));
+      if (key) { const v = JSON.parse(localStorage.getItem(key)); return v?.access_token || ""; }
+    } catch {}
+    return "";
+  };
+
+  const loadPerfil = async (userId, token) => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/perfis?id=eq.${userId}&select=*`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token || SUPABASE_KEY}` }
+      });
+      const data = await res.json();
+      if (data?.[0]) setPerfil(data[0].perfil || 'vendedor');
+      else setPerfil('admin'); // fallback if no profile yet
+    } catch { setPerfil('admin'); }
+  };
+
+  const doLogin = async () => {
+    if (!loginForm.email || !loginForm.password) return;
+    setLoginForm(f => ({...f, loading:true, error:""}));
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginForm.email, password: loginForm.password })
+      });
+      const data = await res.json();
+      if (data.access_token) {
+        // Store token
+        localStorage.setItem('prosigns_token', data.access_token);
+        setUser(data.user);
+        await loadPerfil(data.user.id, data.access_token);
+        await loadAll();
+        setLoginForm(f => ({...f, loading:false}));
+      } else {
+        setLoginForm(f => ({...f, loading:false, error: "Email ou senha incorretos"}));
+      }
+    } catch(e) {
+      setLoginForm(f => ({...f, loading:false, error: "Erro de conexao. Tente novamente."}));
+    }
+  };
+
+  const doLogout = async () => {
+    try {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${getStoredToken()}` }
+      });
+    } catch {}
+    localStorage.removeItem('prosigns_token');
+    setUser(null); setPerfil(null);
+    setData(INIT); setSynced(false);
+  };
 
   // ── Load all data from Supabase on mount ──────────────────────
   useEffect(() => {
     if (!IS_CONNECTED) return;
-    loadAll();
   }, []);
 
   const loadAll = async () => {
@@ -1968,17 +2258,29 @@ export default function App() {
     setLoading(false);
   };
 
+  // Nav filtered by perfil
+  const NAV_FILTERED = perfil === 'vendedor'
+    ? NAV.filter(n => ["vendas","comissoes","cadastros"].includes(n.id))
+    : perfil === 'producao'
+    ? NAV.filter(n => ["vendas"].includes(n.id))
+    : NAV; // admin sees all
+
+  // Auto-navigate to first allowed page if current is forbidden
+  const allowedIds = NAV_FILTERED.map(n => n.id);
+  if (user && allowedIds.length && !allowedIds.includes(page)) {
+    setPage(allowedIds[0]);
+  }
+
   const pages={
     dashboard: <Dashboard  data={data}/>,
     vendas:    <Vendas     data={data} setData={setData}/>,
     caixa:     <FluxoCaixa data={data} setData={setData}/>,
     contas:    <Contas     data={data} setData={setData}/>,
-    comissoes: <Comissoes  data={data} setData={setData}/>,
     cadastros: <Cadastros  data={data} setData={setData}/>,
   };
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#f8fafc",color:C.text,fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -1987,29 +2289,35 @@ export default function App() {
         select option{background:#111120;}
       `}</style>
 
-      {/* HEADER */}
+      }
       <header style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:isMobile?"10px 14px":"10px 20px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:50}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-          <div style={{width:32,height:32,background:C.orange,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:"#000",fontFamily:"Syne,sans-serif"}}>PS</div>
-          <div>
-            <p style={{fontFamily:"Syne,sans-serif",fontWeight:800,fontSize:13,color:C.text,letterSpacing:"0.06em"}}>PRO SIGNS</p>
-            <p style={{color:C.muted,fontSize:9,letterSpacing:"0.1em"}}>FLORIDA · FINANCIAL SYSTEM</p>
-          </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <img src={LOGO_URL} alt="Pro Signs & Wraps" style={{height:isMobile?32:38,width:"auto",objectFit:"contain"}}/>
+          {!isMobile && <p style={{color:C.muted,fontSize:9,letterSpacing:"0.1em",borderLeft:"1px solid #dde3ee",paddingLeft:8}}>FINANCIAL SYSTEM</p>}
         </div>
         {!isMobile&&(
           <nav style={{display:"flex",gap:4,marginLeft:"auto",flexWrap:"wrap"}}>
-            {NAV.map(n=>(
+            {NAV_FILTERED.map(n=>(
               <button key={n.id} onClick={()=>setPage(n.id)}
-                style={{background:page===n.id?"rgba(249,115,22,0.15)":"transparent",color:page===n.id?C.orange:C.muted,border:page===n.id?"1px solid rgba(249,115,22,0.3)":"1px solid transparent",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                style={{background:page===n.id?"rgba(232,25,75,0.08)":"transparent",color:page===n.id?"#e8194b":C.muted,border:page===n.id?"1px solid rgba(232,25,75,0.25)":"1px solid transparent",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
                 {n.icon} {n.label}
               </button>
             ))}
           </nav>
         )}
-        {isMobile&&<p style={{color:C.text,fontWeight:600,fontSize:15,marginLeft:"auto"}}>{NAV.find(n=>n.id===page)?.label}</p>}
+        {isMobile&&<p style={{color:C.text,fontWeight:600,fontSize:15,marginLeft:"auto"}}>{NAV_FILTERED.find(n=>n.id===page)?.label}</p>}
       </header>
 
-      {/* SYNC STATUS BADGE */}
+      }
+        {user && (
+          <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:8}}>
+            {!isMobile && <span style={{color:C.muted,fontSize:11,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.email}</span>}
+            {!isMobile && perfil && <span style={{background:perfil==="admin"?"rgba(249,115,22,0.2)":perfil==="vendedor"?"rgba(59,130,246,0.2)":"rgba(34,197,94,0.2)",color:perfil==="admin"?C.orange:perfil==="vendedor"?C.blue:C.green,borderRadius:99,padding:"2px 8px",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>{perfil}</span>}
+            <button onClick={doLogout} title="Sair" style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:8,color:C.red,cursor:"pointer",fontSize:11,fontWeight:600,padding:"5px 10px",fontFamily:"inherit"}}>Sair</button>
+          </div>
+        )}
+
+        }
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
           {IS_CONNECTED ? (
             synced
@@ -2029,11 +2337,65 @@ export default function App() {
           )}
         </div>
 
-      {/* CONTENT */}
+      }
+      {IS_CONNECTED && !user && !authLoading && (() => (
+        <div style={{position:"fixed",inset:0,background:"#f0f2f5",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+          <div style={{width:"100%",maxWidth:400}}>
+            }
+            <div style={{textAlign:"center",marginBottom:32}}>
+              <img src={LOGO_URL} alt="Pro Signs & Wraps" style={{height:80,width:"auto",objectFit:"contain",margin:"0 auto 8px",display:"block"}}/>
+              <p style={{color:C.muted,fontSize:13,marginTop:4}}>Financial Management System</p>
+            </div>
+            }
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:24}}>
+              <p style={{color:C.text,fontWeight:700,fontSize:16,marginBottom:20,fontFamily:"Syne,sans-serif"}}>Entrar</p>
+              <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+                <div>
+                  <label style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:5}}>Email</label>
+                  <input type="email" value={loginForm.email}
+                    onChange={e=>setLoginForm(f=>({...f,email:e.target.value}))}
+                    onKeyDown={e=>e.key==="Enter"&&doLogin()}
+                    placeholder="seu@email.com"
+                    style={{background:"#f8fafc",border:`1px solid ${C.border}`,borderRadius:8,padding:"12px 14px",color:C.text,fontSize:15,width:"100%",outline:"none",fontFamily:"inherit"}}/>
+                </div>
+                <div>
+                  <label style={{color:C.muted,fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:5}}>Senha</label>
+                  <input type="password" value={loginForm.password}
+                    onChange={e=>setLoginForm(f=>({...f,password:e.target.value}))}
+                    onKeyDown={e=>e.key==="Enter"&&doLogin()}
+                    placeholder="••••••••"
+                    style={{background:"#f8fafc",border:`1px solid ${C.border}`,borderRadius:8,padding:"12px 14px",color:C.text,fontSize:15,width:"100%",outline:"none",fontFamily:"inherit"}}/>
+                </div>
+              </div>
+              {loginForm.error && (
+                <p style={{color:C.red,fontSize:13,marginBottom:12,background:"rgba(239,68,68,0.1)",borderRadius:8,padding:"8px 12px"}}>{loginForm.error}</p>
+              )}
+              <button onClick={doLogin} disabled={loginForm.loading}
+                style={{background:"linear-gradient(135deg,#e8194b 0%,#7b2ff7 50%,#0a1f5c 100%)",color:"#fff",border:"none",borderRadius:10,padding:"12px",width:"100%",fontWeight:700,fontSize:15,cursor:loginForm.loading?"not-allowed":"pointer",fontFamily:"inherit",opacity:loginForm.loading?0.7:1}}>
+                {loginForm.loading ? "Entrando..." : "Entrar"}
+              </button>
+            </div>
+            <p style={{color:C.muted,fontSize:12,textAlign:"center",marginTop:16}}>Acesso restrito — Pro Signs Florida</p>
+          </div>
+        </div>
+      ))()}
+
+      }
+      {authLoading && (
+        <div style={{position:"fixed",inset:0,background:"#f0f2f5",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{width:48,height:48,border:"3px solid #e2e8f0",borderTop:`3px solid ${C.orange}`,borderRadius:"50%",animation:"spin 1s linear infinite",margin:"0 auto 16px"}}/>
+            <p style={{color:C.muted,fontSize:14}}>Verificando acesso...</p>
+            <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+          </div>
+        </div>
+      )}
+
+      }
       <main style={{padding:isMobile?"14px 12px":"20px",maxWidth:960,margin:"0 auto",paddingBottom:isMobile?90:24}}>
         {loading ? (
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:300,gap:16}}>
-            <div style={{width:40,height:40,border:`3px solid ${C.border}`,borderTop:`3px solid ${C.orange}`,borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
+            <div style={{width:40,height:40,border:"3px solid #e2e8f0",borderTop:`3px solid ${C.orange}`,borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
             <p style={{color:C.muted,fontSize:14}}>Carregando dados do Supabase...</p>
             <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
           </div>
@@ -2044,7 +2406,7 @@ export default function App() {
               <p style={{color:C.text,fontSize:13,lineHeight:1.6,marginBottom:12}}>
                 Para salvar os dados online, edite o arquivo e substitua nas linhas 35-36:
               </p>
-              <div style={{background:C.bg,borderRadius:10,padding:12,fontFamily:"monospace",fontSize:12,marginBottom:12}}>
+              <div style={{background:"#f8fafc",borderRadius:10,padding:12,fontFamily:"monospace",fontSize:12,marginBottom:12}}>
                 <p style={{color:C.muted,marginBottom:4}}>// Linha ~35:</p>
                 <p style={{color:C.green}}>const SUPABASE_URL = <span style={{color:"#fbbf24"}}>"https://xxx.supabase.co"</span>;</p>
                 <p style={{color:C.green}}>const SUPABASE_KEY = <span style={{color:"#fbbf24"}}>"eyJ..."</span>;</p>
@@ -2056,13 +2418,13 @@ export default function App() {
         ) : pages[page]}
       </main>
 
-      {/* BOTTOM NAV — mobile */}
+      }
       {isMobile&&(
         <nav style={{position:"fixed",bottom:0,left:0,right:0,background:C.surface,borderTop:`1px solid ${C.border}`,paddingBottom:"env(safe-area-inset-bottom,8px)",zIndex:100}}>
           <div style={{display:"flex",justifyContent:"space-around",padding:"6px 0"}}>
-            {NAV.map(n=>(
+            {NAV_FILTERED.map(n=>(
               <button key={n.id} onClick={()=>setPage(n.id)}
-                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 6px",cursor:"pointer",border:"none",background:"none",color:page===n.id?C.orange:C.muted,minWidth:40,touchAction:"manipulation",fontFamily:"inherit"}}>
+                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 6px",cursor:"pointer",border:"none",background:"none",color:page===n.id?"#e8194b":C.muted,minWidth:40,touchAction:"manipulation",fontFamily:"inherit"}}>
                 <span style={{fontSize:18}}>{n.icon}</span>
                 <span style={{fontSize:9,fontWeight:600,letterSpacing:"0.03em",whiteSpace:"nowrap"}}>{n.label.split(" ")[0]}</span>
               </button>

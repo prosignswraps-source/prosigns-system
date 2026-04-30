@@ -1,1 +1,10 @@
-{"compilerOptions":{"jsx":"react-jsx","strict":false,"allowJs":true,"checkJs":false,"noEmit":true,"skipLibCheck":true}}
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": false,
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}

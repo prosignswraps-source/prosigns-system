@@ -1448,7 +1448,6 @@ function Comissoes({data,setData}) {
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       <SectionHead title="Comissões de Vendedores"/>
 
-      }
       {modal && (() => {
         const v = data.vendedores.find(x => x.id === modal.vendedorId);
         return (
